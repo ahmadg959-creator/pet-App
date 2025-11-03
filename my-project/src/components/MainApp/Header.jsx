@@ -1,0 +1,60 @@
+
+import React from 'react';
+
+const Header = ({ setPage }) => {
+  return (
+    <header className="bg-white/90 backdrop-blur-lg shadow-sm sticky top-0 z-50 border-b border-slate-200">
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <a href="#" onClick={() => setPage('home')} className="page-link flex items-center space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 9.5a2.5 2.5 0 0 1 0 5h-5a2.5 2.5 0 0 1 0-5h5Z" /><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" /><path d="M12 16c-2.67 0-5.18-1.28-6.84-3.34a.5.5 0 0 1 .68-.72A11.02 11.02 0 0 0 12 13.5a11.02 11.02 0 0 0 6.16-1.56.5.5 0 0 1 .68.72C17.18 14.72 14.67 16 12 16Z" /></svg>
+              <span className="font-bold text-2xl text-slate-800">PetCare</span>
+            </a>
+          </div>
+          {/* Main Navigation Links */}
+          <div className="hidden md:flex md:items-center md:space-x-2 bg-slate-100 p-2 rounded-full">
+            <a href="#" onClick={() => setPage('my-pets')} className="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">My Pets</a>
+            <a href="#" onClick={() => setPage('vet-doc')} className="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Vet Doc</a>
+            <a href="#" onClick={() => setPage('community')} className="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Community</a>
+            <a href="#" onClick={() => setPage('services')} className="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Services for You</a>
+          </div>
+          {/* Profile Icon */}
+          <div className="hidden md:block">
+            <a href="#" id="profile-link-desktop" onClick={() => setPage('profile')} className="page-link nav-button block rounded-full transition-transform transform hover:scale-105 focus:outline-none bg-slate-100 p-1">
+              <svg className="paw-icon h-10 w-10" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <g className="paw-group" fill="#718096"> {/* slate-500 */}
+                  <path className="paw-pad main-pad" d="M 50,75 C 40,95 20,85 25,65 C 30,45 70,45 75,65 C 80,85 60,95 50,75 Z" />
+                  <circle className="paw-pad toe-1" cx="25" cy="45" r="10" />
+                  <circle className="paw-pad toe-2" cx="42" cy="32" r="9" />
+                  <circle className="paw-pad toe-3" cx="58" cy="32" r="9" />
+                  <circle className="paw-pad toe-4" cx="75" cy="45" r="10" />
+                </g>
+              </svg>
+            </a>
+          </div>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button id="mobile-menu-button" className="text-slate-600 hover:text-slate-800 focus:outline-none p-2 rounded-md hover:bg-slate-100">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+          </div>
+        </div>
+        {/* Mobile Menu */}
+        <div id="mobile-menu" className="hidden md:hidden pb-4 space-y-2">
+          <a href="#" onClick={() => setPage('my-pets')} className="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">My Pets</a>
+          <a href="#" onClick={() => setPage('vet-doc')} className="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Vet Doc</a>
+          <a href="#" onClick={() => setPage('community')} className="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Community</a>
+          <a href="#" onClick={() => setPage('services')} className="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Services for You</a>
+          <a href="#" onClick={() => setPage('profile')} className="page-link nav-button flex items-center space-x-3 py-3 px-4 text-slate-600 hover:bg-slate-100 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+            <span>Profile</span>
+          </a>
+        </div>
+      </nav>
+    </header>
+  );
+};
+
+export default Header;
