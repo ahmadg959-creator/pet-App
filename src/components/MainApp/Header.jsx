@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
+import { CartContext } from '../../contexts/CartContext';
 
 const navLinks = [
   { to: '/my-pets', text: 'My Pets' },
   { to: '/vet-doc', text: 'Vet Doc' },
   { to: '/community', text: 'Community' },
   { to: '/services', text: 'Services for You' },
+  { to: '/marketplace', text: 'Marketplace' },
 ];
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { cart } = useContext(CartContext);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -17,6 +20,8 @@ const Header = () => {
 
   const activeLinkClass = 'bg-blue-500 text-white';
   const inactiveLinkClass = 'text-slate-600 hover:bg-slate-100';
+
+  const totalCartItems = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <header className="bg-white/90 backdrop-blur-lg shadow-sm sticky top-0 z-50 border-b border-slate-200">
@@ -47,10 +52,22 @@ const Header = () => {
                 {link.text}
               </NavLink>
             ))}
+
           </div>
 
-          {/* Profile Icon */}
-          <div className="hidden md:block">
+
+          {/* Profile Icon & Cart */}
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Cart Button */}
+            <NavLink to="/cart" className="relative p-2 text-gray-700 hover:text-blue-600 transition bg-slate-100 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-shopping-cart"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {totalCartItems}
+                </span>
+              )}
+            </NavLink>
+
             <NavLink
               to="/profile"
               id="profile-link-desktop"
@@ -72,6 +89,15 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
+            {/* Mobile Cart Button */}
+            <NavLink to="/cart" className="relative mr-4 p-2 text-gray-700 hover:text-blue-600 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-shopping-cart"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  {totalCartItems}
+                </span>
+              )}
+            </NavLink>
             <button
               onClick={toggleMobileMenu}
               className="text-slate-600 hover:text-slate-800 focus:outline-none p-2 rounded-md hover:bg-slate-100"
@@ -97,6 +123,7 @@ const Header = () => {
               {link.text}
             </NavLink>
           ))}
+          
           <NavLink
             to="/profile"
             onClick={() => setIsMobileMenuOpen(false)}

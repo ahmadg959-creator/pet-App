@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetCare Connect - My Pets</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Growth Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // This function will wait until the `tailwind` object is loaded before configuring it.
+        // This fixes a potential race condition error: "tailwind is not defined".
+        function configureTailwind() {
+            if (typeof tailwind !== 'undefined') {
+                // Custom Tailwind theme colors
+                tailwind.config = {
+                    theme: {
+                        extend: {
+                            colors: {
+                                'beige': '#F5F5DC',
+                                'sky-blue': '#87CEEB',
+                                'teal-accent': '#008080',
+                            }
+                        }
+                    }
+                }
+            } else {
+                // If tailwind isn't loaded yet, try again in 50ms.
+                setTimeout(configureTailwind, 50);
+            }
+        }
+        // Start the configuration attempt.
+        configureTailwind();
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        /* Adding a subtle transition for page content */
+        .page-content, .pet-view {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Paw Animation Styling for Profile Icon */
+        #profile-link-desktop:hover .paw-pad { animation: paw-press 1.2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        #profile-link-desktop:hover .toe-1 { animation-delay: 0s; }
+        #profile-link-desktop:hover .toe-2 { animation-delay: 0.1s; }
+        #profile-link-desktop:hover .toe-3 { animation-delay: 0.2s; }
+        #profile-link-desktop:hover .toe-4 { animation-delay: 0.3s; }
+        #profile-link-desktop:hover .main-pad { animation-delay: 0.4s; }
+
+        @keyframes paw-press {
+            0%, 50%, 100% { fill: #718096; transform: scale(1); }
+            25% { fill: #3b82f6; transform: scale(1.1); }
+        }
+        
+        /* Paw Hover for Nav Links */
+        .nav-button { position: relative; }
+        .nav-button::after {
+            content: '🐾';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            font-size: 1.2rem;
+            color: #3b82f6;
+        }
+        .nav-button.bg-blue-500::after,
+        .nav-button:hover::after {
+            transform: translateX(-50%) scale(1);
+            opacity: 1;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3b82f6; /* Blue */
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Styling for active tab */
+        .tab-active {
+            border-bottom-color: #3b82f6; /* blue-500 */
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 text-slate-800">
+
+    <!-- Main App Container -->
+    <div id="app" class="flex flex-col min-h-screen">
+        <!-- Top-Level Navigation (Navbar) -->
+        <header class="bg-white/90 backdrop-blur-lg shadow-sm sticky top-0 z-50 border-b border-slate-200">
+            <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0">
+                        <a href="#" data-page="home" class="page-link flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 9.5a2.5 2.5 0 0 1 0 5h-5a2.5 2.5 0 0 1 0-5h5Z"/><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"/><path d="M12 16c-2.67 0-5.18-1.28-6.84-3.34a.5.5 0 0 1 .68-.72A11.02 11.02 0 0 0 12 13.5a11.02 11.02 0 0 0 6.16-1.56.5.5 0 0 1 .68.72C17.18 14.72 14.67 16 12 16Z"/></svg>
+                            <span class="font-bold text-2xl text-slate-800">PetCare</span>
+                        </a>
+                    </div>
+                    <!-- Main Navigation Links -->
+                    <div class="hidden md:flex md:items-center md:space-x-2 bg-slate-100 p-2 rounded-full">
+                        <a href="#" data-page="my-pets" class="page-link nav-button font-medium text-white bg-blue-500 rounded-full py-2 px-5 transition-colors duration-300">My Pets</a>
+                        <a href="#" data-page="vet-doc" class="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Vet Doc</a>
+                        <a href="#" data-page="community" class="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Community</a>
+                        <a href="#" data-page="services" class="page-link nav-button font-medium text-slate-600 rounded-full py-2 px-5 transition-colors duration-300">Services for You</a>
+                    </div>
+                    <!-- Profile Icon -->
+                    <div class="hidden md:block">
+                        <a href="#" id="profile-link-desktop" data-page="profile" class="page-link nav-button block rounded-full transition-transform transform hover:scale-105 focus:outline-none bg-slate-100 p-1">
+                             <svg class="paw-icon h-10 w-10" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <g class="paw-group" fill="#718096"> <!-- slate-500 -->
+                                    <path class="paw-pad main-pad" d="M 50,75 C 40,95 20,85 25,65 C 30,45 70,45 75,65 C 80,85 60,95 50,75 Z" />
+                                    <circle class="paw-pad toe-1" cx="25" cy="45" r="10" />
+                                    <circle class="paw-pad toe-2" cx="42" cy="32" r="9" />
+                                    <circle class="paw-pad toe-3" cx="58" cy="32" r="9" />
+                                    <circle class="paw-pad toe-4" cx="75" cy="45" r="10" />
+                                </g>
+                            </svg>
+                        </a>
+                    </div>
+                     <!-- Mobile Menu Button -->
+                    <div class="md:hidden flex items-center">
+                        <button id="mobile-menu-button" class="text-slate-600 hover:text-slate-800 focus:outline-none p-2 rounded-md hover:bg-slate-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                 <!-- Mobile Menu -->
+                <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
+                    <a href="#" data-page="my-pets" class="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">My Pets</a>
+                    <a href="#" data-page="vet-doc" class="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Vet Doc</a>
+                    <a href="#" data-page="community" class="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Community</a>
+                    <a href="#" data-page="services" class="page-link nav-button block py-2 px-4 text-slate-600 hover:bg-slate-100 rounded-md">Services for You</a>
+                    <a href="#" data-page="profile" class="page-link nav-button flex items-center space-x-3 py-3 px-4 text-slate-600 hover:bg-slate-100 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Profile</span>
+                    </a>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+
+            <!-- My Pets Page Content -->
+            <div id="my-pets" class="page-content">
+                <!-- This div contains the three views: dashboard, form, and detail -->
+                <div id="my-pets-content">
+                    
+                    <!-- 1. Pet Dashboard View -->
+                    <div id="pet-dashboard-view" class="pet-view">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                            <h1 class="text-4xl lg:text-5xl font-bold text-slate-800">My Pets</h1>
+                            <button id="add-pet-btn" class="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 rounded-full transition-colors flex items-center space-x-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                <span>Add Pet</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Container for pet profiles -->
+                        <div id="pet-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <!-- Pet profile cards will be inserted here by JavaScript -->
+                        </div>
+                        
+                        <!-- Message for when no pets are added -->
+                        <div id="no-pets-message" class="text-center py-16 bg-white rounded-xl shadow-sm border border-slate-200 hidden">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            <p class="text-xl font-semibold text-slate-700 mt-4 mb-2">No Pets Yet</p>
+                            <p class="text-slate-500 mb-6">Add your furry, scaly, or feathery friends to get started!</p>
+                            <button id="add-pet-initial-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 rounded-full transition-colors">Add Your First Pet</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Add Pet Form View -->
+                    <div id="add-pet-form-view" class="pet-view hidden">
+                        <h1 class="text-4xl lg:text-5xl font-bold text-slate-800 mb-8 text-center">Add a New Pet</h1>
+                        <form id="add-pet-form" class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200">
+                            <!-- Photo Uploader & Preview -->
+                            <div class="flex flex-col items-center mb-6">
+                                <img id="photo-preview" src="https://placehold.co/128x128/e2e8f0/94a3b8?text=Pet" class="w-32 h-32 rounded-full object-cover border-4 border-slate-200 mb-4" alt="Pet photo preview">
+                                <label for="pet-photo" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-full text-sm transition-colors">
+                                    Upload Photo
+                                </label>
+                                <input type="file" id="pet-photo" class="hidden" accept="image/*">
+                            </div>
+
+                            <!-- Form Fields -->
+                            <div class="grid grid-cols-1 gap-6">
+                                <div>
+                                    <label for="pet-name" class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                                    <input type="text" id="pet-name" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="e.g., Buddy">
+                                </div>
+                                <div>
+                                    <label for="pet-breed" class="block text-sm font-medium text-slate-700 mb-1">Breed</label>
+                                    <input type="text" id="pet-breed" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="e.g., Golden Retriever">
+                                </div>
+                                <div>
+                                    <label for="pet-dob" class="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                                    <input type="date" id="pet-dob" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Gender</label>
+                                    <div class="flex items-center space-x-6">
+                                        <label class="flex items-center"><input type="radio" name="pet-gender" value="Male" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300" checked> <span class="ml-2 text-slate-800">Male</span></label>
+                                        <label class="flex items-center"><input type="radio" name="pet-gender" value="Female" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"> <span class="ml-2 text-slate-800">Female</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex items-center justify-end gap-4 mt-8">
+                                <button type="button" id="cancel-add-pet-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-lg transition-colors">Cancel</button>
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">Save Pet</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 3. Pet Detail View -->
+                    <div id="pet-detail-view" class="pet-view hidden">
+                        <!-- Content will be generated by JavaScript -->
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer Section -->
+        <footer class="bg-white/80 border-t border-slate-200 mt-auto py-8">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+                <p class="mb-2 font-semibold text-teal-accent">Made with ❤️ for Pets and Their Humans.</p>
+                <div class="flex flex-wrap justify-center items-center gap-y-2 gap-x-2 sm:gap-x-4">
+                    <span>© 2025 PetWorld</span>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="#" class="page-link" data-page="about">About</a>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="#" class="page-link" data-page="contact">Contact</a>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="#" class="page-link" data-page="terms">Terms</a>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="#" class="page-link" data-page="privacy">Privacy</a>
+                    <span class="hidden sm:inline text-slate-300">|</span>
+                    <a href="#" class="page-link" data-page="help">Help Center</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Message Modal for Disabled Navigation -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-8 relative text-center">
+            <p id="message-text" class="text-lg text-slate-700 mb-6">Navigation is disabled.</p>
+            <button id="close-message-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition-colors">OK</button>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-8 relative text-center">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Are you sure?</h3>
+            <p id="delete-confirm-text" class="text-slate-600 mb-6">This action cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-delete-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-6 rounded-full transition-colors">Cancel</button>
+                <button id="confirm-delete-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full transition-colors">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const PETS_STORAGE_KEY = 'petCareAppPets';
+
+            // --- Mock Data (for first-time load) ---
+            const mockPets = [
+                {
+                    id: 1,
+                    name: "Max",
+                    breed: "German Shepherd",
+                    dob: "2021-05-10",
+                    gender: "Male",
+                    photo: "https://placehold.co/600x400/c2b280/333333?text=Max",
+                    health: {
+                        vaccinations: [ { id: 1, name: 'Rabies', date: '2022-05-15', brand: 'Rabisin', clinic: 'City Vets' } ],
+                        allergies: [],
+                        medications: [{ name: 'Heartworm Prev.', frequency: 'Monthly', nextDue: '2025-11-01'}]
+                    },
+                    growth: [ // Add this mock data
+                        { id: 1, date: '2021-07-10', weight_kg: 5.2, height_cm: 30, notes: 'First checkup', photo: 'https://placehold.co/100x100/c2b280/333333?text=5kg' },
+                        { id: 2, date: '2022-01-10', weight_kg: 15.8, height_cm: 55, notes: 'Growing fast!', photo: 'https://placehold.co/100x100/c2b280/333333?text=15kg' },
+                        { id: 3, date: '2022-05-15', weight_kg: 25.0, height_cm: 62, notes: 'Vet visit', photo: 'https://placehold.co/100x100/c2b280/333333?text=25kg' }
+                    ],
+                    reminders: [
+                        { type: 'Vet', date: '2025-10-23', note: 'Vaccination' },
+                        { type: 'Grooming', date: '2025-11-15', note: 'Full groom' }
+                    ],
+                    gallery: []
+                },
+                {
+                    id: 2,
+                    name: "Bella",
+                    breed: "Siamese",
+                    dob: "2023-01-15",
+                    gender: "Female",
+                    photo: "https://placehold.co/600x400/d1c4e9/333333?text=Bella",
+                    health: { vaccinations: [], allergies: ["Dairy"], medications: [] },
+                    growth: [], // Add this empty array
+                    reminders: [],
+                    gallery: []
+                }
+            ];
+
+            // --- Data Persistence Functions ---
+            function savePets() {
+                localStorage.setItem(PETS_STORAGE_KEY, JSON.stringify(pets));
+            }
+
+            function loadPets() {
+                const petsData = localStorage.getItem(PETS_STORAGE_KEY);
+                if (petsData) {
+                    return JSON.parse(petsData);
+                } else {
+                    return mockPets; // Load mock data if nothing in storage
+                }
+            }
+            
+            // --- Load Initial Data ---
+            let pets = loadPets();
+
+            // --- Selectors ---
+            const petDashboardView = document.getElementById('pet-dashboard-view');
+            const addPetFormView = document.getElementById('add-pet-form-view');
+            const petDetailView = document.getElementById('pet-detail-view');
+
+            const addPetBtn = document.getElementById('add-pet-btn');
+            const addPetInitialBtn = document.getElementById('add-pet-initial-btn');
+            const cancelAddPetBtn = document.getElementById('cancel-add-pet-btn');
+            const addPetForm = document.getElementById('add-pet-form');
+            const petPhotoInput = document.getElementById('pet-photo');
+            const photoPreview = document.getElementById('photo-preview');
+            const petListContainer = document.getElementById('pet-list');
+            const noPetsMessage = document.getElementById('no-pets-message');
+            let growthChartInstance = null; // Add this line
+            
+            // --- Mobile Menu ---
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            }
+
+            // --- Message Modal Logic ---
+            const messageModal = document.getElementById('message-modal');
+            const messageText = document.getElementById('message-text');
+            const closeMessageBtn = document.getElementById('close-message-btn');
+
+            function showMessage(msg) {
+                messageText.textContent = msg;
+                messageModal.classList.remove('hidden');
+            }
+
+            if (closeMessageBtn) {
+                closeMessageBtn.addEventListener('click', () => {
+                    messageModal.classList.add('hidden');
+                });
+            }
+
+            // --- Delete Confirmation Modal Logic ---
+            const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+            const deleteConfirmText = document.getElementById('delete-confirm-text');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            let deleteConfirmCallback = null;
+
+            function showDeleteConfirmation(message, onConfirm) {
+                deleteConfirmText.textContent = message || 'This action cannot be undone.';
+                deleteConfirmCallback = onConfirm;
+                deleteConfirmModal.classList.remove('hidden');
+            }
+
+            function hideDeleteConfirmation() {
+                deleteConfirmModal.classList.add('hidden');
+                deleteConfirmCallback = null;
+            }
+
+            cancelDeleteBtn.addEventListener('click', hideDeleteConfirmation);
+
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (typeof deleteConfirmCallback === 'function') {
+                    deleteConfirmCallback();
+                }
+                hideDeleteConfirmation();
+            });
+
+            // --- Disabled Navigation ---
+            document.querySelectorAll('.page-link, .nav-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = e.currentTarget.dataset.page;
+                    if (page && page !== 'home' && page !== 'my-pets') {
+                        showMessage('Navigation to other pages is disabled in this clone.');
+                    } else if (!page) {
+                         showMessage('Navigation is disabled in this clone.');
+                    } else if (page === 'home') {
+                         showMessage('Navigation to the Home page is disabled.');
+                    }
+                });
+            });
+
+            // --- Gemini API Integration ---
+            const apiKey = ""; // Canvas will provide the key
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            async function callGeminiAPI(userPrompt, systemInstruction, retries = 3, delay = 1000) {
+                const payload = { contents: [{ parts: [{ text: userPrompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] }, };
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        if (response.status === 429 && retries > 0) { // Throttling
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            return callGeminiAPI(userPrompt, systemInstruction, retries - 1, delay * 2);
+                        }
+                        throw new Error(`API error: ${response.statusText}`);
+                    }
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response. Please try again.";
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    if (retries > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return callGeminiAPI(userPrompt, systemInstruction, retries - 1, delay * 2);
+                    }
+                    return "There was an error connecting to the AI service. Please check your connection and try again.";
+                }
+            }
+            
+            // --- "My Pets" Feature Logic ---
+
+            function showDashboard() {
+                addPetFormView.classList.add('hidden');
+                petDetailView.classList.add('hidden');
+                petDashboardView.classList.remove('hidden');
+                renderPets();
+            }
+
+            function showAddPetForm() {
+                petDashboardView.classList.add('hidden');
+                petDetailView.classList.add('hidden');
+                addPetFormView.classList.remove('hidden');
+                addPetForm.reset();
+                photoPreview.src = 'https://placehold.co/128x128/e2e8f0/94a3b8?text=Pet';
+            }
+
+            function calculateAgeAtDate(dob, eventDate) {
+                const birthDate = new Date(dob);
+                const targetDate = new Date(eventDate);
+                let years = targetDate.getFullYear() - birthDate.getFullYear();
+                let months = targetDate.getMonth() - birthDate.getMonth();
+                let days = targetDate.getDate() - birthDate.getDate();
+
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+                
+                let result = [];
+                if (years > 0) result.push(`${years}y`);
+                if (months > 0) result.push(`${months}m`);
+                if (years === 0 && months === 0 && days > 0) result.push(`${days}d`);
+                if (result.length === 0 && (years > 0 || months > 0 || days > 0)) return result.join(' ');
+                if (result.length === 0) return 'Newborn';
+                
+                return result.join(' ');
+            }
+
+            function showPetDetailView(petId) {
+                const pet = pets.find(p => p.id === petId);
+                if (!pet) return;
+
+                petDashboardView.classList.add('hidden');
+                addPetFormView.classList.add('hidden');
+
+                const age = calculateAge(pet.dob);
+                
+                // --- Generate Detail View HTML ---
+                petDetailView.innerHTML = `
+                    <button id="back-to-dashboard-btn" class="mb-6 inline-flex items-center text-slate-600 hover:text-blue-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                        Back to My Pets
+                    </button>
+                    
+                    <!-- Pet Header -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 mb-8">
+                        <img src="${pet.photo}" alt="${pet.name}" class="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white ring-4 ring-blue-500 flex-shrink-0">
+                        <div class="text-center md:text-left w-full">
+                            <h1 class="text-4xl lg:text-5xl font-bold text-slate-800">${pet.name}</h1>
+                            <p class="text-xl text-slate-500 mt-1">${pet.breed}</p>
+                            <div class="flex items-center justify-center md:justify-start gap-4 text-sm mt-4 text-slate-600">
+                                <span class="bg-slate-100 rounded-full px-4 py-1.5">${pet.gender}</span>
+                                <span class="bg-slate-100 rounded-full px-4 py-1.5">${age} years old</span>
+                            </div>
+                            <div class="mt-4">
+                                <button id="generate-bio-btn" class="bg-purple-500 hover:bg-purple-600 text-white text-sm font-bold py-2 px-4 rounded-full transition-colors flex items-center gap-2">
+                                    ✨ Generate Personality Bio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Generated Bio -->
+                    <div id="pet-bio-container" class="bg-purple-50 border border-purple-200 p-6 rounded-2xl mb-8 hidden">
+                        <h3 class="text-xl font-bold text-purple-800 mb-2">About ${pet.name}</h3>
+                        <div id="pet-bio-loader" class="flex justify-center hidden"><div class="loader" style="border-top-color: #7e22ce;"></div></div>
+                        <p id="pet-bio-content" class="text-purple-800 leading-relaxed"></p>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="border-b border-slate-200 mb-6">
+                        <nav class="-mb-px flex space-x-6 overflow-x-auto">
+                            <button data-tab="health" class="pet-tab tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Health Records</button>
+                            <button data-tab="growth" class="pet-tab text-slate-500 hover:text-slate-700 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">Growth Tracker</button>
+                            <button data-tab="reminders" class="pet-tab text-slate-500 hover:text-slate-700 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">Reminders</button>
+                            <button data-tab="gallery" class="pet-tab text-slate-500 hover:text-slate-700 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm">Media Gallery</button>
+                        </nav>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="tab-content-container">
+                        <!-- Health Records Content -->
+                        <div id="tab-health" class="tab-content bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                            <!-- Vaccinations Section -->
+                            <div class="mb-8">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xl font-bold text-slate-800">Vaccinations</h3>
+                                    <button class="toggle-form-btn text-sm bg-blue-100 text-blue-600 font-semibold py-1 px-3 rounded-full hover:bg-blue-200" data-form="add-vaccination-form">+ Add New</button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table id="vaccination-table" class="min-w-full text-sm text-left text-slate-600">
+                                        <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                                            <tr>
+                                                <th scope="col" class="px-4 py-3">#</th>
+                                                <th scope="col" class="px-4 py-3">Date</th>
+                                                <th scope="col" class="px-4 py-3">Age at Vaccination</th>
+                                                <th scope="col" class="px-4 py-3">Vaccine/Brand</th>
+                                                <th scope="col" class="px-4 py-3">Clinic/Doctor</th>
+                                                <th scope="col" class="px-4 py-3 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <p id="no-vaccinations-message" class="text-slate-500 text-sm py-4 hidden">No vaccination records.</p>
+                                <form id="add-vaccination-form" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border">
+                                    <h4 id="vaccine-form-title" class="text-lg font-semibold mb-3">Add New Vaccination</h4>
+                                    <input type="hidden" id="editing-vaccine-index">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input type="text" id="new-vaccine-name" placeholder="Vaccine Name" class="p-2 border rounded-md w-full">
+                                        <input type="text" id="new-vaccine-brand" placeholder="Brand Name" class="p-2 border rounded-md w-full">
+                                        <input type="date" id="new-vaccine-date" class="p-2 border rounded-md w-full">
+                                        <input type="text" id="new-vaccine-clinic" placeholder="Clinic/Doctor Name" class="p-2 border rounded-md w-full">
+                                    </div>
+                                    <div class="mt-4 flex gap-4">
+                                        <button type="button" id="save-vaccine-btn" class="bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-full">Save Vaccination</button>
+                                        <button id="cancel-vaccine-edit-btn" type="button" class="bg-slate-200 text-slate-700 text-sm font-semibold py-2 px-4 rounded-full">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <!-- Allergies Section -->
+                            <div class="mb-8">
+                                 <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-xl font-bold text-slate-800">Allergies</h3>
+                                    <button class="toggle-form-btn text-sm bg-blue-100 text-blue-600 font-semibold py-1 px-3 rounded-full hover:bg-blue-200" data-form="add-allergy-form">+ Add</button>
+                                </div>
+                                <div id="allergy-list" class="flex flex-wrap gap-2"></div>
+                                <p id="no-allergies-message" class="text-slate-500 text-sm hidden">No known allergies.</p>
+                                 <div id="add-allergy-form" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border flex gap-3 items-center">
+                                    <input type="text" id="new-allergy-name" placeholder="Allergy Name" class="p-2 border rounded-md flex-grow">
+                                    <button class="add-item-btn bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-full" data-type="allergies">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Growth Tracker Content -->
+                        <div id="tab-growth" class="tab-content hidden bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                            <!-- Tab Header -->
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                                <div class="flex items-center gap-4">
+                                    <img src="${pet.photo}" alt="${pet.name}" class="w-12 h-12 rounded-full object-cover border-2 border-slate-200 flex-shrink-0">
+                                    <div>
+                                        <h3 class="text-xl font-bold text-slate-800">Growth Tracker</h3>
+                                        <p class="text-slate-500">Tracking progress for ${pet.name}</p>
+                                    </div>
+                                </div>
+                                <button class="toggle-form-btn text-sm bg-blue-100 text-blue-600 font-semibold py-2 px-4 rounded-full hover:bg-blue-200 flex-shrink-0 flex items-center gap-2" data-form="add-growth-form">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                    Add Growth Entry
+                                </button>
+                            </div>
+
+                            <!-- Add/Edit Growth Form -->
+                            <form id="add-growth-form" class="hidden mb-6 p-4 bg-slate-50 rounded-lg border">
+                                <h4 id="growth-form-title" class="text-lg font-semibold mb-3">Add New Growth Entry</h4>
+                                <input type="hidden" id="editing-growth-index">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <input type="date" id="new-growth-date" class="p-2 border rounded-md w-full" title="Date">
+                                    <input type="number" step="0.1" id="new-growth-weight" placeholder="Weight (kg)" class="p-2 border rounded-md w-full">
+                                    <input type="number" step="0.1" id="new-growth-height" placeholder="Height (cm)" class="p-2 border rounded-md w-full">
+                                    <input type="text" id="new-growth-notes" placeholder="Notes (e.g., vet checkup)" class="p-2 border rounded-md w-full md:col-span-2">
+                                </div>
+                                <div class="flex flex-col sm:flex-row items-center gap-4">
+                                    <div class="flex items-center gap-3">
+                                         <img id="growth-photo-preview" src="https://placehold.co/64x64/e2e8f0/94a3b8?text=Photo" class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200" alt="Growth photo preview">
+                                        <label for="new-growth-photo" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-full text-sm transition-colors">
+                                            Upload Photo
+                                        </label>
+                                        <input type="file" id="new-growth-photo" class="hidden" accept="image/*">
+                                    </div>
+                                    <div class="flex-grow flex justify-end gap-4 mt-4 sm:mt-0">
+                                        <button type="button" id="cancel-growth-edit-btn" class="bg-slate-200 text-slate-700 text-sm font-semibold py-2 px-4 rounded-full">Cancel</button>
+                                        <button type="button" id="save-growth-btn" class="bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-full">Save Entry</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- Chart Area -->
+                            <div class="mb-8 p-4 bg-slate-50 rounded-lg h-64 md:h-80 relative">
+                                <canvas id="growth-chart"></canvas>
+                            </div>
+
+                            <!-- Growth Log List/Table -->
+                            <div id="growth-log-list" class="space-y-4">
+                                <!-- Entries will be injected here -->
+                            </div>
+                            <p id="no-growth-message" class="text-slate-500 text-center py-8 hidden">No growth data yet.</p>
+                        </div>
+
+                        <div id="tab-reminders" class="tab-content hidden bg-white rounded-2xl shadow-lg p-6 md:p-8"><p class="text-center text-slate-500">Editing for Reminders coming soon!</p></div>
+                        <div id="tab-gallery" class="tab-content hidden bg-white rounded-2xl shadow-lg p-6 md:p-8"><p class="text-center text-slate-500">Editing for Media Gallery coming soon!</p></div>
+                    </div>
+                `;
+                petDetailView.classList.remove('hidden');
+
+                // Add event listeners for new elements
+                attachPetDetailEventListeners(pet);
+            }
+
+            function attachPetDetailEventListeners(pet) {
+                 document.getElementById('back-to-dashboard-btn').addEventListener('click', showDashboard);
+                
+                // Toggle form visibility
+                petDetailView.querySelectorAll('.toggle-form-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const formId = e.currentTarget.dataset.form;
+                        const form = document.getElementById(formId);
+                        form.classList.toggle('hidden');
+                        // If it's the vaccine form, reset it for "Add" mode
+                        if (formId === 'add-vaccination-form') {
+                             resetVaccineForm();
+                        }
+                    });
+                });
+
+                // Tab switching logic
+                const tabs = petDetailView.querySelectorAll('.pet-tab');
+                const tabContents = petDetailView.querySelectorAll('.tab-content');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('tab-active') || t.classList.add('text-slate-500', 'hover:text-slate-700'));
+                        tab.classList.add('tab-active');
+                        tab.classList.remove('text-slate-500', 'hover:text-slate-700');
+                        tabContents.forEach(content => content.classList.add('hidden'));
+                        document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+                    });
+                });
+
+                // --- Specific Handlers for Health Tab ---
+                renderVaccinationTable(pet);
+                renderAllergyList(pet);
+
+                // --- Specific Handlers for Growth Tab ---
+                renderGrowthLog(pet);
+                renderGrowthChart(pet); // Initial render
+
+                // Photo preview for growth entry
+                const growthPhotoInput = document.getElementById('new-growth-photo');
+                if (growthPhotoInput) {
+                    growthPhotoInput.addEventListener('change', () => {
+                        const file = growthPhotoInput.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                document.getElementById('growth-photo-preview').src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+
+
+                // Re-attach listeners within the health tab specifically
+                const healthTab = document.getElementById('tab-health');
+                healthTab.addEventListener('click', (e) => {
+                    // Save/Update Vaccine
+                    if (e.target.id === 'save-vaccine-btn') {
+                        const index = document.getElementById('editing-vaccine-index').value;
+                        const record = {
+                            id: index !== '' ? pet.health.vaccinations[index].id : Date.now(),
+                            name: document.getElementById('new-vaccine-name').value,
+                            brand: document.getElementById('new-vaccine-brand').value,
+                            date: document.getElementById('new-vaccine-date').value,
+                            clinic: document.getElementById('new-vaccine-clinic').value,
+                        };
+
+                        if (record.name && record.date) {
+                            if (index !== '') { // Editing
+                                pet.health.vaccinations[index] = record;
+                            } else { // Adding
+                                pet.health.vaccinations.push(record);
+                            }
+                            savePets(); // Save data
+                            renderVaccinationTable(pet);
+                            document.getElementById('add-vaccination-form').classList.add('hidden');
+                        } else {
+                            // Using custom modal instead of alert
+                            showMessage('Vaccine Name and Date are required.');
+                        }
+                    }
+                    // Cancel Vaccine Edit
+                    if (e.target.id === 'cancel-vaccine-edit-btn') {
+                        document.getElementById('add-vaccination-form').classList.add('hidden');
+                        resetVaccineForm();
+                    }
+                    // Edit Vaccine
+                    if (e.target.closest('.edit-vaccine-btn')) {
+                        const btn = e.target.closest('.edit-vaccine-btn');
+                        const index = btn.dataset.index;
+                        const vaccine = pet.health.vaccinations[index];
+                        
+                        document.getElementById('add-vaccination-form').classList.remove('hidden');
+                        document.getElementById('vaccine-form-title').textContent = 'Edit Vaccination Record';
+                        document.getElementById('editing-vaccine-index').value = index;
+                        
+                        document.getElementById('new-vaccine-name').value = vaccine.name;
+                        document.getElementById('new-vaccine-brand').value = vaccine.brand || '';
+                        document.getElementById('new-vaccine-date').value = vaccine.date;
+                        document.getElementById('new-vaccine-clinic').value = vaccine.clinic || '';
+                    }
+                    // Delete Vaccine
+                    if (e.target.closest('.delete-vaccine-btn')) {
+                        const btn = e.target.closest('.delete-vaccine-btn');
+                        const index = btn.dataset.index;
+                        showDeleteConfirmation('Are you sure you want to delete this vaccination record?', () => {
+                           pet.health.vaccinations.splice(index, 1);
+                           savePets(); // Save data
+                           renderVaccinationTable(pet);
+                        });
+                    }
+                     // Save Allergy
+                    if (e.target.matches('.add-item-btn[data-type="allergies"]')) {
+                        const name = document.getElementById('new-allergy-name').value;
+                        if (name) {
+                            pet.health.allergies.push(name);
+                            savePets(); // Save data
+                            renderAllergyList(pet);
+                            document.getElementById('new-allergy-name').value = '';
+                            document.getElementById('add-allergy-form').classList.add('hidden');
+                        }
+                    }
+                    // Delete Allergy
+                    if (e.target.closest('.delete-allergy-btn')) {
+                        const btn = e.target.closest('.delete-allergy-btn');
+                        const index = btn.dataset.index;
+                        showDeleteConfirmation('Are you sure you want to remove this allergy?', () => {
+                            pet.health.allergies.splice(index, 1);
+                            savePets(); // Save data
+                            renderAllergyList(pet);
+                        });
+                    }
+                });
+
+                // --- Event Listeners for Growth Tab ---
+                const growthTab = document.getElementById('tab-growth');
+                if (growthTab) {
+                    growthTab.addEventListener('click', (e) => {
+                        // Save/Update Growth Entry
+                        if (e.target.id === 'save-growth-btn') {
+                            const index = document.getElementById('editing-growth-index').value;
+                            const record = {
+                                id: index !== '' ? pet.growth[index].id : Date.now(),
+                                date: document.getElementById('new-growth-date').value,
+                                weight_kg: parseFloat(document.getElementById('new-growth-weight').value) || null,
+                                height_cm: parseFloat(document.getElementById('new-growth-height').value) || null,
+                                notes: document.getElementById('new-growth-notes').value,
+                                photo: document.getElementById('growth-photo-preview').src,
+                            };
+
+                            if (record.date && (record.weight_kg || record.height_cm)) {
+                                if (index !== '') { // Editing
+                                    pet.growth[index] = record;
+                                } else { // Adding
+                                    pet.growth.push(record);
+                                }
+                                savePets(); // Save data
+                                renderGrowthLog(pet);
+                                renderGrowthChart(pet);
+                                document.getElementById('add-growth-form').classList.add('hidden');
+                                resetGrowthForm();
+                            } else {
+                                showMessage('Date and at least one measurement (Weight or Height) are required.');
+                            }
+                        }
+
+                        // Cancel Growth Edit
+                        if (e.target.id === 'cancel-growth-edit-btn') {
+                            document.getElementById('add-growth-form').classList.add('hidden');
+                            resetGrowthForm();
+                        }
+
+                        // Edit Growth Entry
+                        if (e.target.closest('.edit-growth-btn')) {
+                            const btn = e.target.closest('.edit-growth-btn');
+                            const index = btn.dataset.index;
+                            const entry = pet.growth[index];
+                            
+                            document.getElementById('add-growth-form').classList.remove('hidden');
+                            document.getElementById('growth-form-title').textContent = 'Edit Growth Entry';
+                            document.getElementById('editing-growth-index').value = index;
+                            
+                            document.getElementById('new-growth-date').value = entry.date;
+                            document.getElementById('new-growth-weight').value = entry.weight_kg || '';
+                            document.getElementById('new-growth-height').value = entry.height_cm || '';
+                            document.getElementById('new-growth-notes').value = entry.notes || '';
+                            document.getElementById('growth-photo-preview').src = entry.photo || 'https://placehold.co/64x64/e2e8f0/94a3b8?text=Photo';
+                        }
+
+                        // Delete Growth Entry
+                        if (e.target.closest('.delete-growth-btn')) {
+                            const btn = e.target.closest('.delete-growth-btn');
+                            const index = btn.dataset.index;
+                            showDeleteConfirmation('Are you sure you want to delete this growth entry?', () => {
+                                pet.growth.splice(index, 1);
+                                savePets(); // Save data
+                                renderGrowthLog(pet);
+                                renderGrowthChart(pet);
+                            });
+                        }
+                    });
+                }
+
+
+                 // AI Bio Generator
+                 document.getElementById('generate-bio-btn').addEventListener('click', async (event) => {
+                    const bioContainer = document.getElementById('pet-bio-container');
+                    const bioLoader = document.getElementById('pet-bio-loader');
+                    const bioContent = document.getElementById('pet-bio-content');
+
+                    bioContainer.classList.remove('hidden');
+                    bioLoader.classList.remove('hidden');
+                    bioContent.innerHTML = '';
+                    event.currentTarget.disabled = true;
+
+                    const systemInstruction = "You are a creative pet biographer. Write a short, fun, and heartwarming personality bio for a pet in the first person (from the pet's perspective). The bio should be one paragraph and capture a unique personality.";
+                    const userPrompt = `My name is ${pet.name}, I'm a ${calculateAge(pet.dob)} year old ${pet.breed}. Write my personality bio.`;
+                    
+                    const bioText = await callGeminiAPI(userPrompt, systemInstruction);
+
+                    bioContent.textContent = bioText;
+                    bioLoader.classList.add('hidden');
+                    event.currentTarget.disabled = false;
+                });
+            }
+
+            function renderVaccinationTable(pet) {
+                const tableBody = document.getElementById('vaccination-table').querySelector('tbody');
+                const noRecordsMsg = document.getElementById('no-vaccinations-message');
+                tableBody.innerHTML = '';
+
+                if (pet.health.vaccinations.length === 0) {
+                    noRecordsMsg.classList.remove('hidden');
+                    document.getElementById('vaccination-table').classList.add('hidden');
+                } else {
+                    noRecordsMsg.classList.add('hidden');
+                    document.getElementById('vaccination-table').classList.remove('hidden');
+                    pet.health.vaccinations.forEach((v, index) => {
+                        const ageAtVaccination = calculateAgeAtDate(pet.dob, v.date);
+                        const row = `
+                            <tr class="bg-white border-b hover:bg-slate-50">
+                                <td class="px-4 py-3 font-medium text-slate-900">${index + 1}</td>
+                                <td class="px-4 py-3">${v.date}</td>
+                                <td class="px-4 py-3">${ageAtVaccination}</td>
+                                <td class="px-4 py-3">${v.name} / ${v.brand || 'N/A'}</td>
+                                <td class="px-4 py-3">${v.clinic || 'N/A'}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <button class="edit-vaccine-btn font-medium text-blue-600 hover:underline mr-3" data-index="${index}">Edit</button>
+                                    <button class="delete-vaccine-btn font-medium text-red-600 hover:underline" data-index="${index}">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                }
+            }
+
+            function renderAllergyList(pet) {
+                const listContainer = document.getElementById('allergy-list');
+                const noRecordsMsg = document.getElementById('no-allergies-message');
+                listContainer.innerHTML = '';
+                if(pet.health.allergies.length === 0) {
+                    noRecordsMsg.classList.remove('hidden');
+                } else {
+                    noRecordsMsg.classList.add('hidden');
+                    pet.health.allergies.forEach((a, index) => {
+                        listContainer.innerHTML += `
+                            <span class="bg-red-100 text-red-700 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-2">
+                                ${a}
+                                <button class="delete-allergy-btn text-red-400 hover:text-red-600 font-bold" data-index="${index}">&times;</button>
+                            </span>`;
+                    });
+                }
+            }
+            
+            function renderGrowthLog(pet) {
+                const logContainer = document.getElementById('growth-log-list');
+                const noRecordsMsg = document.getElementById('no-growth-message');
+                logContainer.innerHTML = '';
+
+                if (!pet.growth || pet.growth.length === 0) {
+                    noRecordsMsg.classList.remove('hidden');
+                    logContainer.classList.add('hidden');
+                } else {
+                    // Sort entries by date, descending (newest first)
+                    const sortedGrowth = [...pet.growth].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    noRecordsMsg.classList.add('hidden');
+                    logContainer.classList.remove('hidden');
+                    
+                    sortedGrowth.forEach((g, index) => {
+                        // Find the original index before sorting for editing/deleting
+                        const originalIndex = pet.growth.findIndex(item => item.id === g.id);
+                        const ageAtEntry = calculateAgeAtDate(pet.dob, g.date);
+                        
+                        const entryCard = `
+                        <div class="bg-white border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-slate-50 transition-colors">
+                            <img src="${g.photo || 'https://placehold.co/64x64/e2e8f0/94a3b8?text=Pet'}" alt="Growth photo" class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200 flex-shrink-0">
+                            
+                            <div class="flex-grow grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm w-full">
+                                <div>
+                                    <span class="font-semibold text-slate-800">${g.date}</span>
+                                    <span class="block text-slate-500">${ageAtEntry} old</span>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-slate-800">${g.weight_kg || 'N/A'} kg</span>
+                                    <span class="block text-slate-500">Weight</span>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-slate-800">${g.height_cm || 'N/A'} cm</span>
+                                    <span class="block text-slate-500">Height</span>
+                                </div>
+                                <div class="col-span-2 sm:col-span-4">
+                                    <p class="text-slate-600">${g.notes || 'No notes'}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0 flex sm:flex-col gap-2 w-full sm:w-auto mt-3 sm:mt-0">
+                                <button class="edit-growth-btn w-full sm:w-auto text-left sm:text-right text-xs font-medium text-blue-600 hover:underline" data-index="${originalIndex}">Edit</button>
+                                <button class="delete-growth-btn w-full sm:w-auto text-left sm:text-right text-xs font-medium text-red-600 hover:underline" data-index="${originalIndex}">Delete</button>
+                            </div>
+                        </div>
+                        `;
+                        logContainer.innerHTML += entryCard;
+                    });
+                }
+            }
+
+            function renderGrowthChart(pet) {
+                const ctx = document.getElementById('growth-chart');
+                if (!ctx) return;
+
+                if (growthChartInstance) {
+                    growthChartInstance.destroy();
+                }
+
+                if (!pet.growth || pet.growth.length === 0) {
+                    // Maybe show a message on the canvas? For now, just return.
+                    return;
+                }
+
+                // Sort data by date, ascending
+                const sortedData = [...pet.growth].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                const labels = sortedData.map(g => g.date);
+                const weightData = sortedData.map(g => g.weight_kg);
+                const heightData = sortedData.map(g => g.height_cm);
+
+                growthChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Weight (kg)',
+                                data: weightData,
+                                borderColor: '#3b82f6', // blue-500
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                yAxisID: 'yWeight',
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Height (cm)',
+                                data: heightData,
+                                borderColor: '#8b5cf6', // purple-500
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                fill: false,
+                                yAxisID: 'yHeight',
+                                tension: 0.3,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Date' }
+                            },
+                            yWeight: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Weight (kg)', color: '#3b82f6' }
+                            },
+                            yHeight: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Height (cm)', color: '#8b5cf6' },
+                                grid: { drawOnChartArea: false } // only draw grid for weight
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y;
+                                            if (context.dataset.yAxisID === 'yWeight') label += ' kg';
+                                            if (context.dataset.yAxisID === 'yHeight') label += ' cm';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function resetGrowthForm() {
+                const form = document.getElementById('add-growth-form');
+                if (form) form.reset();
+                const editingIndex = document.getElementById('editing-growth-index');
+                if (editingIndex) editingIndex.value = '';
+                const formTitle = document.getElementById('growth-form-title');
+                if (formTitle) formTitle.textContent = 'Add New Growth Entry';
+                const preview = document.getElementById('growth-photo-preview');
+                if (preview) preview.src = 'https://placehold.co/64x64/e2e8f0/94a3b8?text=Photo';
+                const photoInput = document.getElementById('new-growth-photo');
+                if (photoInput) photoInput.value = ''; // Reset file input
+            }
+
+            function calculateAge(dob) {
+                if(!dob) return 'Unknown';
+                const birthDate = new Date(dob);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                return age;
+            }
+
+            function renderPets() {
+                petListContainer.innerHTML = '';
+                if (pets.length === 0) {
+                    noPetsMessage.classList.remove('hidden');
+                    petListContainer.classList.add('hidden');
+                    addPetBtn.classList.add('hidden');
+                } else {
+                    noPetsMessage.classList.add('hidden');
+                    petListContainer.classList.remove('hidden');
+                    addPetBtn.classList.remove('hidden');
+                    
+                    pets.forEach(pet => {
+                        const age = calculateAge(pet.dob);
+                        const petCard = document.createElement('div');
+                        petCard.className = "bg-white rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 cursor-pointer";
+                        petCard.innerHTML = `
+                            <div class="h-48 bg-slate-200">
+                                <img src="${pet.photo}" alt="${pet.name}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="p-6">
+                                <h3 class="text-2xl font-bold text-slate-800">${pet.name}</h3>
+                                <p class="text-slate-500">${pet.breed}</p>
+                                <div class="flex items-center justify-between text-sm mt-4 text-slate-600">
+                                    <span class="bg-slate-100 rounded-full px-3 py-1">${pet.gender}</span>
+                                    <span class="bg-slate-100 rounded-full px-3 py-1">${age} years old</span>
+                                </div>
+                            </div>
+                        `;
+                        petCard.addEventListener('click', () => showPetDetailView(pet.id));
+                        petListContainer.appendChild(petCard);
+                    });
+                }
+            }
+            
+            addPetBtn.addEventListener('click', showAddPetForm);
+            addPetInitialBtn.addEventListener('click', showAddPetForm);
+            cancelAddPetBtn.addEventListener('click', showDashboard);
+
+            petPhotoInput.addEventListener('change', () => {
+                const file = petPhotoInput.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        photoPreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            addPetForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newPet = {
+                    id: Date.now(),
+                    name: document.getElementById('pet-name').value,
+                    breed: document.getElementById('pet-breed').value,
+                    dob: document.getElementById('pet-dob').value,
+                    gender: document.querySelector('input[name="pet-gender"]:checked').value,
+                    photo: photoPreview.src,
+                    health: { vaccinations: [], allergies: [], medications: [] },
+                    growth: [],
+                    reminders: [],
+                    gallery: []
+                };
+                pets.push(newPet);
+                savePets(); // Save data
+                showDashboard();
+            });
+
+            // --- Initial Load ---
+            showDashboard();
+
+        });
+    </script>
+</body>
+</html>
+
+

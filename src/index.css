@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Styles from original pet.html */
+
 body {
     font-family: 'Inter', sans-serif;
     background-color: #f8fafc; /* slate-50 */
@@ -96,3 +96,10 @@ input[type="checkbox"].toggle:checked::before { transform: translateX(1.25rem); 
     95% { transform: scaleY(0.1); }
 }
 .blinking-eye { animation: blink 4s infinite; transform-origin: center; }
+
+/* Responsive fine-tuning */
+@media (max-width: 640px) {
+  #services h1 {
+    font-size: 1.75rem;
+  }
+}

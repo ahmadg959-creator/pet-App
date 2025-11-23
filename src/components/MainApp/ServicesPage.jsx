@@ -1,162 +1,683 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import './ServicesPage.css';
 
-import React, { useState } from 'react';
+const providers = {
+  Grooming: [
+    { name: "Pawfect Groomers", location: "Lahore", rating: "⭐ 4.8" },
+    { name: "Fluffy Spa", location: "Karachi", rating: "⭐ 4.7" },
+  ],
+  Adoption: [
+    { name: "Happy Paws Shelter", location: "Islamabad", rating: "⭐ 4.9" },
+    { name: "Rescue Haven", location: "Lahore", rating: "⭐ 4.6" },
+  ],
+  Marketplace: [
+    { name: "Pet Essentials Store", location: "Online", rating: "⭐ 4.8" },
+    { name: "Paw Mart", location: "Karachi", rating: "⭐ 4.5" },
+  ],
+  Training: [
+    { name: "Obedience Experts", location: "Lahore", rating: "⭐ 4.9" },
+    { name: "Smart Pups Academy", location: "Karachi", rating: "⭐ 4.7" },
+  ],
+  Medication: [
+    { name: "VetMed Pharmacy", location: "Lahore", rating: "⭐ 4.8" },
+    { name: "Pet Health Hub", location: "Islamabad", rating: "⭐ 4.7" },
+  ],
+};
 
-const serviceProviders = [
-    { id: 1, name: 'Paws & Bubbles', type: 'Groomer', city: 'Multan', rating: 5, photo: 'https://placehold.co/100x100/818CF8/FFFFFF?text=PB' },
-    { id: 2, name: 'The Polished Pup', type: 'Groomer', city: 'Lahore', rating: 4, photo: 'https://placehold.co/100x100/818CF8/FFFFFF?text=PP' },
-    { id: 3, name: 'Good Boy Training', type: 'Trainer', city: 'Multan', rating: 5, photo: 'https://placehold.co/100x100/F472B6/FFFFFF?text=GBT' },
-    { id: 4, name: 'City Paws Walkers', type: 'Walker', city: 'Lahore', rating: 4, photo: 'https://placehold.co/100x100/60A5FA/FFFFFF?text=CPW' },
-];
+const BookingModal = ({ closeBookingModal, provider, handleBookingSubmit, bookingData, setBookingData }) => {
+    const modalRef = useRef(null);
 
-const adoptablePets = [
-    { id: 1, name: 'Whiskers', breed: 'Tabby Cat', age: '2 years', photo: 'https://placehold.co/400x300/a5b4fc/FFFFFF?text=Whiskers', desc: 'A friendly and curious cat looking for a calm home.' },
-    { id: 2, name: 'Rex', breed: 'Labrador Mix', age: '8 months', photo: 'https://placehold.co/400x300/a5b4fc/FFFFFF?text=Rex', desc: 'An energetic and playful puppy who loves fetch.' },
-    { id: 3, name: 'Kiwi', breed: 'Parakeet', age: '1 year', photo: 'https://placehold.co/400x300/a5b4fc/FFFFFF?text=Kiwi', desc: 'A cheerful bird who enjoys singing and company.' },
-];
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Tab') {
+                const focusableElements = modalRef.current.querySelectorAll('button, [href], input, select, textarea');
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
 
-const marketplaceProducts = [
-    { id: 1, name: 'Organic Dog Food', price: '$55.99', photo: 'https://placehold.co/300x300/fbbf24/FFFFFF?text=Food' },
-    { id: 2, name: 'Durable Chew Toy', price: '$12.50', photo: 'https://placehold.co/300x300/fbbf24/FFFFFF?text=Toy' },
-    { id: 3, name: 'Cozy Pet Bed', price: '$45.00', photo: 'https://placehold.co/300x300/fbbf24/FFFFFF?text=Bed' },
-    { id: 4, name: 'Reflective Leash', price: '$22.00', photo: 'https://placehold.co/300x300/fbbf24/FFFFFF?text=Leash' },
-];
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+    
+    return (
+    <div
+      id="bookingModal"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bookingModalTitle"
+      tabIndex="0"
+      ref={modalRef}
+    >
+      <div className="bg-white rounded-2xl shadow-lg w-11/12 sm:w-3/4 lg:w-1/3 p-6 relative shadow-base">
+        <div className="tooltip">
+        <button
+          id="closeBookingModal"
+          className="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-xl btn-animate"
+          onClick={closeBookingModal}
+          aria-label="Close booking modal"
+        >
+          ✖
+        </button>
+        <span className="tooltip-text">Close</span>
+        </div>
+
+        <h2 id="bookingModalTitle" className="text-2xl font-bold text-blue-600 mb-4 text-center">
+          Book Service with {provider.name}
+        </h2>
+
+        <form id="bookingForm" className="space-y-4" onSubmit={handleBookingSubmit}>
+          <select
+            id="petSelect"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={bookingData.pet}
+            onChange={(e) => setBookingData({ ...bookingData, pet: e.target.value })}
+            aria-label="Select a pet"
+          >
+            <option value="">Select Pet</option>
+            <option value="Buddy">Buddy</option>
+            <option value="Bella">Bella</option>
+            <option value="Max">Max</option>
+          </select>
+
+          <input
+            type="date"
+            id="bookingDate"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={bookingData.date}
+            onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
+            aria-label="Select a booking date"
+          />
+
+          <input
+            type="time"
+            id="bookingTime"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={bookingData.time}
+            onChange={(e) => setBookingData({ ...bookingData, time: e.target.value })}
+            aria-label="Select a booking time"
+          />
+
+          <textarea
+            id="bookingNotes"
+            placeholder="Additional notes (optional)"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={bookingData.notes}
+            onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+            aria-label="Additional notes for the booking"
+          ></textarea>
+
+          <div className="flex justify-end gap-3">
+            <div className="tooltip">
+            <button
+              type="button"
+              id="cancelBooking"
+              className="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg px-4 py-2 btn-animate"
+              onClick={closeBookingModal}
+              aria-label="Cancel booking"
+            >
+              Cancel
+            </button>
+            <span className="tooltip-text">Cancel booking</span>
+            </div>
+            <div className="tooltip">
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 btn-animate"
+              aria-label="Confirm booking"
+            >
+              Book Now
+            </button>
+            <span className="tooltip-text">Confirm and book</span>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+)};
+
+const ProviderCard = ({ provider, service, openBookingModal }) => (
+    <div className="border p-4 rounded-lg shadow-sm flex justify-between items-center card-hover shadow-base">
+        <div>
+            <h4 className="font-semibold text-gray-800">{provider.name}</h4>
+            <p className="text-sm text-gray-500">{provider.location}</p>
+            <p className="text-sm text-yellow-500">{provider.rating}</p>
+        </div>
+        <div className="tooltip">
+        <button
+            className="bookNowBtn bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-1 text-sm btn-animate"
+            data-provider={provider.name}
+            data-service={service}
+            onClick={() => openBookingModal(provider)}
+            aria-label={`Book now with ${provider.name}`}
+        >
+            Book Now
+        </button>
+        <span className="tooltip-text">Schedule your selected service</span>
+        </div>
+    </div>
+);
+
+const EditBookingModal = ({ booking, closeEditModal, handleEditBookingSubmit, setEditingBooking }) => {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Tab') {
+                const focusableElements = modalRef.current.querySelectorAll('button, [href], input, select, textarea');
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+    
+    return (
+    <div
+      id="editBookingModal"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editBookingModalTitle"
+      tabIndex="0"
+      ref={modalRef}
+    >
+      <div className="bg-white rounded-2xl shadow-lg w-11/12 sm:w-3/4 lg:w-1/3 p-6 relative shadow-base">
+        <div className="tooltip">
+        <button
+          id="closeEditModal"
+          className="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-xl btn-animate"
+          onClick={closeEditModal}
+          aria-label="Close edit booking modal"
+        >
+          ✖
+        </button>
+        <span className="tooltip-text">Close</span>
+        </div>
+
+        <h2 id="editBookingModalTitle" className="text-2xl font-bold text-blue-600 mb-4 text-center">
+          Edit Booking
+        </h2>
+
+        <form id="editBookingForm" className="space-y-4" onSubmit={handleEditBookingSubmit}>
+          <select
+            id="editPetSelect"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={booking.pet}
+            onChange={(e) => setEditingBooking({ ...booking, pet: e.target.value })}
+            aria-label="Select a pet to edit"
+          >
+            <option value="Buddy">Buddy</option>
+            <option value="Bella">Bella</option>
+            <option value="Max">Max</option>
+          </select>
+
+          <input
+            type="date"
+            id="editBookingDate"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={booking.date}
+            onChange={(e) => setEditingBooking({ ...booking, date: e.target.value })}
+            aria-label="Select a new booking date"
+          />
+
+          <input
+            type="time"
+            id="editBookingTime"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={booking.time}
+            onChange={(e) => setEditingBooking({ ...booking, time: e.target.value })}
+            aria-label="Select a new booking time"
+          />
+
+          <textarea
+            id="editBookingNotes"
+            placeholder="Additional notes (optional)"
+            className="w-full border rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            value={booking.notes}
+            onChange={(e) => setEditingBooking({ ...booking, notes: e.target.value })}
+            aria-label="Additional notes for the booking"
+          ></textarea>
+
+          <div className="flex justify-end gap-3">
+            <div className="tooltip">
+            <button
+              type="button"
+              id="cancelEdit"
+              className="bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg px-4 py-2 btn-animate"
+              onClick={closeEditModal}
+              aria-label="Cancel editing booking"
+            >
+              Cancel
+            </button>
+            <span className="tooltip-text">Cancel changes</span>
+            </div>
+            <div className="tooltip">
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 btn-animate"
+              aria-label="Save changes to booking"
+            >
+              Save Changes
+            </button>
+            <span className="tooltip-text">Save your changes</span>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+)};
 
 const ServicesPage = () => {
-    const [view, setView] = useState('menu');
+    const location = useLocation();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedService, setSelectedService] = useState(null);
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [selectedProvider, setSelectedProvider] = useState(null);
+    const [bookings, setBookings] = useState([]);
+    const [bookingData, setBookingData] = useState({
+        pet: '',
+        date: '',
+        time: '',
+        notes: ''
+    });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingBooking, setEditingBooking] = useState(null);
+    const [editingBookingIndex, setEditingBookingIndex] = useState(null);
 
-    const renderStars = (rating) => {
-        return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    useEffect(() => {
+        const savedBookings = JSON.parse(localStorage.getItem("serviceBookings")) || [];
+        setBookings(savedBookings);
+    }, []);
+
+    useEffect(() => {
+        const hash = location.hash.replace('#', '');
+        if (hash && providers[hash]) {
+            openModal(hash);
+        }
+    }, [location]);
+
+    const openModal = (service) => {
+        setSelectedService(service);
+        setIsModalOpen(true);
     };
 
-    const GroomingView = () => (
-        <div id="grooming-view">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input type="text" placeholder="City (e.g., Multan)" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" />
-                    <select className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-white">
-                        <option value="">All Services</option>
-                        <option>Groomer</option>
-                        <option>Trainer</option>
-                        <option>Walker</option>
-                    </select>
-                    <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">Search</button>
-                </div>
-            </div>
-            <div id="service-provider-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {serviceProviders.map(provider => (
-                    <div key={provider.id} className="bg-white rounded-2xl shadow-lg p-6 text-center">
-                        <img src={provider.photo} alt={provider.name} className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-slate-200" />
-                        <h3 className="text-xl font-bold text-slate-800">{provider.name}</h3>
-                        <p className="text-blue-500 font-semibold">{provider.type}</p>
-                        <p className="text-sm text-slate-500 mb-3">{provider.city}</p>
-                        <div className="my-3 flex items-center justify-center gap-1 text-yellow-400">
-                            {renderStars(provider.rating)}
-                        </div>
-                        <button className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-5 rounded-full transition-colors">Contact</button>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedService(null);
+    };
 
-    const AdoptionView = () => (
-        <div id="adoption-view">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200 mb-8">
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">List a Pet for Adoption</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <input type="text" placeholder="Pet's Name" className="w-full p-3 border border-slate-300 rounded-lg" />
-                    <input type="text" placeholder="Pet's Breed" className="w-full p-3 border border-slate-300 rounded-lg" />
-                </div>
-                <textarea className="w-full h-24 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" placeholder="Enter some keywords about their personality (e.g., playful, loves kids, cuddly, house-trained)"></textarea>
-                <button className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2">
-                    ✨ Generate Adoption Description with AI
-                </button>
-                <button className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">Submit Listing</button>
-            </div>
-            <div id="adoption-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {adoptablePets.map(pet => (
-                    <div key={pet.id} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                        <img src={pet.photo} alt={pet.name} className="w-full h-48 object-cover" />
-                        <div className="p-5">
-                            <h3 className="text-2xl font-bold text-slate-800">{pet.name}</h3>
-                            <p className="text-slate-500">{`${pet.breed}, ${pet.age}`}</p>
-                            <p className="text-sm mt-2">{pet.desc}</p>
-                            <button className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-5 rounded-full transition-colors">Learn More</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    const openBookingModal = (provider) => {
+        setSelectedProvider(provider);
+        setIsBookingModalOpen(true);
+    };
 
-    const MarketplaceView = () => (
-        <div id="marketplace-view">
-            <div id="product-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {marketplaceProducts.map(product => (
-                    <div key={product.id} className="bg-white rounded-2xl shadow-lg overflow-hidden text-center">
-                        <div className="bg-slate-200 h-40 flex items-center justify-center">
-                            <img src={product.photo} alt={product.name} className="h-32 w-32 object-contain" />
-                        </div>
-                        <div className="p-5">
-                            <h4 className="font-bold text-slate-800">{product.name}</h4>
-                            <p className="text-lg font-semibold text-blue-500 mt-1">{product.price}</p>
-                            <button className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Add to Cart</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    const closeBookingModal = () => {
+        setIsBookingModalOpen(false);
+        setSelectedProvider(null);
+        setBookingData({ pet: '', date: '', time: '', notes: '' }); // Reset form
+    };
 
-    const MedicationView = () => (
-        <div id="medication-view">
-            <div id="medication-reminder-list" className="space-y-4">
-                <p className="text-center text-slate-500 py-8">No upcoming medication reminders found in your pet profiles.</p>
-            </div>
-        </div>
-    );
+    const openEditModal = (booking, index) => {
+        setEditingBooking(booking);
+        setEditingBookingIndex(index);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingBooking(null);
+        setEditingBookingIndex(null);
+    };
+
+    const handleEditBookingSubmit = (e) => {
+        e.preventDefault();
+        const savedBookings = JSON.parse(localStorage.getItem("serviceBookings")) || [];
+        savedBookings[editingBookingIndex] = editingBooking;
+        localStorage.setItem("serviceBookings", JSON.stringify(savedBookings));
+        setBookings(savedBookings);
+        alert("✅ Booking updated successfully!");
+        closeEditModal();
+    };
+
+    const handleDeleteBooking = (index) => {
+        if (confirm("🗑️ Are you sure you want to delete this booking?")) {
+            const savedBookings = JSON.parse(localStorage.getItem("serviceBookings")) || [];
+            savedBookings.splice(index, 1);
+            localStorage.setItem("serviceBookings", JSON.stringify(savedBookings));
+            setBookings(savedBookings);
+        }
+    };
+
+    const handleBookingSubmit = (e) => {
+        e.preventDefault();
+        const { pet, date, time, notes } = bookingData;
+
+        if (!pet || !date || !time) {
+            alert("⚠️ Please fill all required fields!");
+            return;
+        }
+
+        const booking = { 
+            provider: selectedProvider.name, 
+            service: selectedService, 
+            ...bookingData 
+        };
+        const savedBookings = JSON.parse(localStorage.getItem("serviceBookings")) || [];
+        savedBookings.push(booking);
+        localStorage.setItem("serviceBookings", JSON.stringify(savedBookings));
+        setBookings(savedBookings);
+
+        alert("✅ Booking Confirmed!");
+        closeBookingModal();
+    };
 
     return (
-        <div id="services" className="page-content">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                <h1 className="text-4xl lg:text-5xl font-bold text-slate-800">Services for You</h1>
-                {view !== 'menu' && (
-                    <button onClick={() => setView('menu')} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-full transition-colors flex items-center space-x-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                        <span>Back to Services</span>
+        <div id="services" className="page-content bg-gray-50 py-12 section-container">
+            <div className="container mx-auto px-6">
+                <div id="servicesGrid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+                  {/* 🧼 Grooming */}
+                  <div className="bg-white shadow-md rounded-2xl p-6 text-center transition hover:shadow-lg card-hover shadow-base flex flex-col justify-between h-full" tabIndex="0">
+                    <div>
+                        <div className="text-5xl mb-3">🧼</div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Grooming & Care</h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          Find local groomers, trainers, and walkers.
+                        </p>
+                    </div>
+                    <div className="tooltip">
+                    <button
+                      className="viewProvidersBtn bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                      data-service="Grooming"
+                      onClick={() => openModal('Grooming')}
+                      aria-label="View Grooming Providers"
+                    >
+                      View Providers
                     </button>
-                )}
+                    <span className="tooltip-text">See nearby professionals for this service</span>
+                    </div>
+                  </div>
+            
+                  {/* 🤝 Adoption */}
+                  <div className="bg-white shadow-md rounded-2xl p-6 text-center transition hover:shadow-lg card-hover shadow-base flex flex-col justify-between h-full" tabIndex="0">
+                    <div>
+                        <div className="text-5xl mb-3">🏠</div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Adoption / Rehoming</h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          Browse or list adoptable pets.
+                        </p>
+                    </div>
+                    <div className="tooltip">
+                    <button
+                      className="viewProvidersBtn bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                      data-service="Adoption"
+                      onClick={() => openModal('Adoption')}
+                      aria-label="View Adoption Providers"
+                    >
+                      View Providers
+                    </button>
+                    <span className="tooltip-text">See nearby professionals for this service</span>
+                    </div>
+                  </div>
+            
+                  {/* 🛒 Marketplace */}
+                  <div className="bg-white shadow-md rounded-2xl p-6 text-center transition hover:shadow-lg card-hover shadow-base flex flex-col justify-between h-full" tabIndex="0">
+                    <div>
+                        <div className="text-5xl mb-3">🛒</div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Marketplace</h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          Shop for essential pet products.
+                        </p>
+                    </div>
+                    <div className="tooltip">
+                    <button
+                      className="viewProvidersBtn bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                      data-service="Marketplace"
+                      onClick={() => openModal('Marketplace')}
+                      aria-label="View Marketplace Providers"
+                    >
+                      View Providers
+                    </button>
+                    <span className="tooltip-text">See nearby professionals for this service</span>
+                    </div>
+                  </div>
+            
+                  {/* 🐕 Training */}
+                  <div className="bg-white shadow-md rounded-2xl p-6 text-center transition hover:shadow-lg card-hover shadow-base flex flex-col justify-between h-full" tabIndex="0">
+                    <div>
+                        <div className="text-5xl mb-3">🐕</div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Training</h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          Professional trainers to guide your pet’s behavior.
+                        </p>
+                    </div>
+                    <div className="tooltip">
+                    <button
+                      className="viewProvidersBtn bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                      data-service="Training"
+                      onClick={() => openModal('Training')}
+                      aria-label="View Training Providers"
+                    >
+                      View Providers
+                    </button>
+                    <span className="tooltip-text">See nearby professionals for this service</span>
+                    </div>
+                  </div>
+            
+                  {/* 💊 Medication Reminders */}
+                  <div className="bg-white shadow-md rounded-2xl p-6 text-center transition hover:shadow-lg card-hover shadow-base flex flex-col justify-between h-full" tabIndex="0">
+                    <div>
+                        <div className="text-5xl mb-3">💊</div>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Medication Reminders</h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          View upcoming medication schedules.
+                        </p>
+                    </div>
+                    <div className="tooltip">
+                    <button
+                      className="viewProvidersBtn bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                      data-service="Medication"
+                      onClick={() => openModal('Medication')}
+                      aria-label="View Medication Providers"
+                    >
+                      View Providers
+                    </button>
+                    <span className="tooltip-text">See nearby professionals for this service</span>
+                    </div>
+                  </div>
+            
+                </div>
+
+                {/* =================== SEARCH & FILTER BAR START =================== */}
+                <div
+                  id="servicesFilterBar"
+                  className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8"
+                >
+                  {/* Search Input */}
+                  <input
+                    type="text"
+                    id="serviceSearch"
+                    placeholder="🔍 Search service..."
+                    className="w-full sm:w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    aria-label="Search for a service"
+                  />
+
+                  {/* Sort Dropdown */}
+                  <select
+                    id="serviceSort"
+                    className="w-full sm:w-1/4 border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    aria-label="Sort services"
+                  >
+                    <option value="default">Sort by: Default</option>
+                    <option value="top">Top Rated</option>
+                    <option value="nearest">Nearest</option>
+                    <option value="price">Price</option>
+                  </select>
+                </div>
+                {/* =================== SEARCH & FILTER BAR END =================== */}
             </div>
 
-            {view === 'menu' && (
-                <div id="services-menu-view" className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <button onClick={() => setView('grooming')} className="bg-white p-8 rounded-2xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300">
-                        <span className="text-6xl">🧽</span>
-                        <h2 className="text-2xl font-bold text-slate-800 mt-4">Grooming & Care</h2>
-                        <p className="text-slate-500 mt-1">Find local groomers, trainers, and walkers.</p>
-                    </button>
-                    <button onClick={() => setView('adoption')} className="bg-white p-8 rounded-2xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300">
-                        <span className="text-6xl">🏠</span>
-                        <h2 className="text-2xl font-bold text-slate-800 mt-4">Adoption / Rehoming</h2>
-                        <p className="text-slate-500 mt-1">Browse or list adoptable pets.</p>
-                    </button>
-                    <button onClick={() => setView('marketplace')} className="bg-white p-8 rounded-2xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300">
-                        <span className="text-6xl">🛒</span>
-                        <h2 className="text-2xl font-bold text-slate-800 mt-4">Marketplace</h2>
-                        <p className="text-slate-500 mt-1">Shop for essential pet products.</p>
-                    </button>
-                    <button onClick={() => setView('medication')} className="bg-white p-8 rounded-2xl shadow-lg text-center transform hover:-translate-y-2 transition-transform duration-300">
-                        <span className="text-6xl">💊</span>
-                        <h2 className="text-2xl font-bold text-slate-800 mt-4">Medication Reminders</h2>
-                        <p className="text-slate-500 mt-1">View upcoming medication schedules.</p>
-                    </button>
+            {/* =================== PROVIDER MODAL START =================== */}
+            <div
+              id="providerModal"
+              className={`fixed inset-0 bg-black bg-opacity-50 ${isModalOpen ? 'flex' : 'hidden'} items-center justify-center z-50 fade-enter`}
+              onClick={(e) => {
+                if (e.target.id === 'providerModal') {
+                  closeModal();
+                }
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="providerModalTitle"
+              tabIndex="0"
+            >
+              <div
+                className="bg-white rounded-lg shadow-lg w-11/12 sm:w-3/4 lg:w-1/2 p-6 relative shadow-base"
+              >
+                {/* Close Button */}
+                <div className="tooltip">
+                <button
+                  id="closeProviderModal"
+                  className="absolute top-2 right-3 text-gray-500 hover:text-gray-700 text-xl btn-animate"
+                  onClick={closeModal}
+                  aria-label="Close provider modal"
+                >
+                  ✖
+                </button>
+                <span className="tooltip-text">Close</span>
                 </div>
-            )}
 
-            {view === 'grooming' && <GroomingView />}
-            {view === 'adoption' && <AdoptionView />}
-            {view === 'marketplace' && <MarketplaceView />}
-            {view === 'medication' && <MedicationView />}
+                {/* Modal Title */}
+                <h2 id="providerModalTitle" className="text-2xl font-bold text-blue-600 mb-4 text-center">
+                  Available Providers for {selectedService}
+                </h2>
+
+                {/* Provider List */}
+                <div id="providerList" className="space-y-4">
+                  {selectedService && providers[selectedService] && providers[selectedService].length > 0 ?
+                    providers[selectedService].map((provider, index) => (
+                        <ProviderCard key={index} provider={provider} service={selectedService} openBookingModal={openBookingModal} />
+                    )) :
+                    <p className="text-center text-gray-500">No providers found for this service.</p>
+                  }
+                </div>
+              </div>
+            </div>
+            {/* =================== PROVIDER MODAL END =================== */}
+
+            {isBookingModalOpen && <BookingModal closeBookingModal={closeBookingModal} provider={selectedProvider} handleBookingSubmit={handleBookingSubmit} bookingData={bookingData} setBookingData={setBookingData} />}
+
+            {isEditModalOpen && <EditBookingModal booking={editingBooking} closeEditModal={closeEditModal} handleEditBookingSubmit={handleEditBookingSubmit} setEditingBooking={setEditingBooking} />}
+
+            {/* =================== MY BOOKINGS SECTION START =================== */}
+            <section id="myBookings" className="bg-gray-50 py-12 mt-10 section-container">
+              <div className="container mx-auto px-6">
+                <h2 className="text-3xl font-bold text-blue-600 mb-6 text-center">
+                  📋 My Bookings
+                </h2>
+                <div id="bookingsContainer" className="space-y-4">
+                  {bookings.length > 0 ? (
+                    bookings.map((booking, index) => (
+                      <div key={index} className="bg-white shadow-sm border border-gray-100 rounded-lg p-4 flex justify-between items-start card-hover shadow-base" tabIndex="0">
+                        <div>
+                          <h3 className="font-semibold text-blue-700 mb-1">🐶 {booking.pet}</h3>
+                          <p className="text-gray-600 text-sm mb-1">📅 {booking.date} at {booking.time}</p>
+                          {booking.notes && <p className="text-gray-500 text-xs italic">📝 {booking.notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <div className="tooltip">
+                          <button
+                            className="editBookingBtn bg-yellow-400 hover:bg-yellow-500 text-white rounded-md px-3 py-1 text-sm btn-animate"
+                            data-index={index}
+                            onClick={() => openEditModal(booking, index)}
+                            aria-label={`Edit booking for ${booking.pet}`}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <span className="tooltip-text">Edit this booking</span>
+                          </div>
+                          <div className="tooltip">
+                          <button
+                            className="deleteBookingBtn text-red-500 hover:text-red-700 text-sm font-semibold btn-animate"
+                            onClick={() => handleDeleteBooking(index)}
+                            aria-label={`Delete booking for ${booking.pet}`}
+                          >
+                            ❌ Delete
+                          </button>
+                          <span className="tooltip-text">Delete this booking</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p id="noBookingsMsg" className="text-center text-gray-500">
+                      No bookings yet. Book your first service to see it here.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+            {/* =================== MY BOOKINGS SECTION END =================== */}
+
+            {/* =================== AI SUGGESTION CARD START =================== */}
+            <section id="aiSuggestionCard" className="py-12 bg-gray-50 section-container">
+              <div className="container mx-auto px-6">
+                <div
+                  className="bg-white rounded-xl shadow-md p-6 text-center border border-gray-100 card-hover shadow-base"
+                  tabIndex="0"
+                >
+                  <div className="text-5xl mb-3">🤖</div>
+                  <h3 className="text-2xl font-bold text-blue-700 mb-2">
+                    AI Suggestions for You
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Your pet <span className="font-semibold text-blue-600">Bella</span> hasn’t
+                    been groomed in 6 weeks.<br />
+                    We recommend scheduling grooming soon!
+                  </p>
+                  <div className="tooltip">
+                  <button
+                    id="generateSuggestionBtn"
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2 text-sm transition btn-animate"
+                    aria-label="Generate a new AI suggestion"
+                  >
+                    Generate New Suggestion
+                  </button>
+                  <span className="tooltip-text">Get a new AI suggestion</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+            {/* =================== AI SUGGESTION CARD END =================== */}
         </div>
     );
 };
